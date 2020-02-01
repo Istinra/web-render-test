@@ -51,8 +51,22 @@ function main() {
     gl.vertexAttribPointer(programInfo.attribLocations.position, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(programInfo.attribLocations.position);
 
+    const projectionMatrix = mat4.create();
 
-    drawScene(gl, programInfo);
+    let lastFrame = 0;
+    let animationTimer = 0;
+
+    function render(totalTime: number) {
+        const dt = totalTime - lastFrame;
+        lastFrame = totalTime;
+
+        animationTimer = (animationTimer + dt / 1600) % 6.28319;
+
+        drawScene(gl, programInfo, projectionMatrix, animationTimer);
+        requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
 
 }
 
@@ -87,7 +101,7 @@ function loadShader(gl: WebGL2RenderingContext, type: GLenum, source: string) {
 }
 
 
-function drawScene(gl: WebGL2RenderingContext, programInfo: any) {
+function drawScene(gl: WebGL2RenderingContext, programInfo: any, projectionMatrix: mat4, animationTimer: number) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
     gl.clearDepth(1.0);                 // Clear everything
     gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -99,7 +113,6 @@ function drawScene(gl: WebGL2RenderingContext, programInfo: any) {
     const aspect = 600 / 600;
     const zNear = 0.1;
     const zFar = 100.0;
-    const projectionMatrix = mat4.create();
 
     mat4.perspective(projectionMatrix,
         fieldOfView,
@@ -111,13 +124,18 @@ function drawScene(gl: WebGL2RenderingContext, programInfo: any) {
     // the center of the scene.
     const modelViewMatrix = mat4.create();
 
-    mat4.rotateY(modelViewMatrix, modelViewMatrix, 0.1);
     // Now move the drawing position a bit to where we want to
     // start drawing the square.
 
     mat4.translate(modelViewMatrix,     // destination matrix
         modelViewMatrix,     // matrix to translate
-        [-1.9, 0.0, -16.0]);  // amount to translate
+        [0.0, 0.0, -16.0]);  // amount to translate
+
+    const rotMat = mat4.create();
+
+    mat4.rotate(rotMat, rotMat, animationTimer, [0.5, 0.5, 0.5]);
+
+    mat4.multiply(modelViewMatrix, modelViewMatrix, rotMat);
 
     mat4.multiply(projectionMatrix, projectionMatrix, modelViewMatrix);
 
